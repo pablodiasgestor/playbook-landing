@@ -1,1 +1,673 @@
+<!-- index.html
+  Landing page do playbook (Nutri Solo)
+  ✅ Fundo “pano/tecido” roxo→preto animado (SVG feTurbulence + feDisplacementMap)
+  ✅ Form POST para n8n via iframe (sem fetch / sem CORS)
+  ✅ WhatsApp obrigatório (required) + consentimento obrigatório (required)
+  ✅ UTMs + landing_url + timestamp
+  ✅ “Vira obrigado” na mesma página (sem depender de redirect do n8n)
+  ⚠️ Troque o action abaixo: https://projeto-01-n8n.n3mjwn.easypanel.host/webhook/landing_page_playbook_fvqie2497
+-->
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Playbook gratuito | Nutricionistas solos</title>
+  <meta name="description" content="Baixe o playbook gratuito feito pra nutricionistas solos que querem captar e organizar leads sem bagunçar a agenda." />
 
+  <!-- Inter (Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#593FD8;
+      --text:#E6E5EA;
+      --stroke:rgba(230,229,234,.12);
+      --card:rgba(10,10,16,.55);
+      --shadow-card:0 18px 45px rgba(0,0,0,.35);
+      --r-lg:18px;
+      --g-hero: transparent; /* fundo real fica no pano animado */
+      --muted: rgba(230,229,234,.78);
+      --muted2: rgba(230,229,234,.72);
+      --muted3: rgba(230,229,234,.62);
+      --radius: 18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--g-hero);
+      color: var(--text);
+      overflow-x:hidden;
+    }
+
+    /* ===== Background “pano/tecido” roxo→preto ===== */
+    .bg-fabric{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      overflow:hidden;
+      background:#000;
+    }
+    .bg-svg{
+      width:100%;
+      height:100%;
+      display:block;
+      transform: scale(1.08);
+      filter: saturate(1.05) contrast(1.05);
+    }
+    .bg-grain{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:.12;
+      mix-blend-mode: overlay;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      background-size: 260px 260px;
+    }
+
+    /* ===== Layout ===== */
+    .container{
+      width:min(1200px, 100%);
+      margin:0 auto;
+      padding: 56px 20px;
+      position:relative;
+    }
+
+    /* “Grain” leve (opcional) */
+    .grain{ position:relative; }
+    .grain:before{
+      content:"";
+      position:absolute; inset:0;
+      pointer-events:none;
+      opacity:.12;
+      mix-blend-mode: overlay;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      border-radius: var(--r-lg);
+    }
+
+    /* Pill / label */
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(89,63,216,.35);
+      background: rgba(89,63,216,.14);
+      color: rgba(230,229,234,.92);
+      font-size: 13px;
+    }
+
+    /* Headline */
+    .h1{
+      font-size: clamp(40px, 5vw, 72px);
+      line-height: 1.03;
+      letter-spacing: -0.02em;
+      margin: 18px 0 14px;
+      font-weight: 800;
+    }
+    .h1 .accent{ color: var(--accent); }
+
+    .lead{
+      color: rgba(230,229,234,.78);
+      font-size: 16px;
+      line-height: 1.65;
+      max-width: 880px;
+      margin: 0 0 18px;
+    }
+
+    /* Cards */
+    .grid{
+      margin-top: 34px;
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 18px;
+    }
+    .card{
+      border-radius: var(--r-lg);
+      border: 1px solid var(--stroke);
+      background: var(--card);
+      box-shadow: var(--shadow-card);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .card-inner{
+      padding: 22px 22px 18px;
+    }
+    .card-title{
+      font-size: 20px;
+      font-weight: 700;
+      margin: 6px 0 6px;
+    }
+    .card-desc{
+      color: rgba(230,229,234,.72);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* CTA Button */
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-weight: 800;
+      border: 1px solid rgba(89,63,216,.45);
+      background: rgba(89,63,216,.18);
+      color: var(--text);
+      cursor:pointer;
+      text-decoration:none;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      background: rgba(89,63,216,.24);
+      border-color: rgba(89,63,216,.70);
+      box-shadow: 0 14px 40px rgba(89,63,216,.18);
+    }
+    .btn.primary{
+      background: var(--accent);
+      border-color: rgba(197,183,242,.25);
+    }
+    .btn.primary:hover{ background: #6A52FF; }
+
+    .micro{
+      margin-top: 10px;
+      color: rgba(230,229,234,.62);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Section helpers */
+    section{
+      scroll-margin-top: 24px;
+    }
+    .section-title{
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0 0 10px;
+      letter-spacing: -0.01em;
+    }
+    .p{
+      margin: 0 0 10px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .list{
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .list li{ margin: 6px 0; }
+
+    /* Form */
+    .form{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    label{
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(230,229,234,.92);
+    }
+    input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(230,229,234,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    input:focus{
+      border-color: rgba(89,63,216,.75);
+      box-shadow: 0 0 0 4px rgba(89,63,216,.15);
+    }
+    .full{ grid-column: 1 / -1; }
+    .consent{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      font-size: 13px;
+      color: rgba(230,229,234,.78);
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+    .consent input{
+      width:auto;
+      margin-top: 3px;
+    }
+    .status{
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(230,229,234,.62);
+      min-height: 18px;
+    }
+
+    /* Reveal animations */
+    .reveal{
+      opacity:0;
+      transform: translateY(12px);
+    }
+    .reveal.in{
+      opacity:1;
+      transform: translateY(0);
+      transition: 600ms ease;
+    }
+    .reveal.d2{ transition-delay: 120ms; }
+    .reveal.d3{ transition-delay: 240ms; }
+
+    /* Thank-you state */
+    #thankYouState{
+      display:none;
+      min-height: 70vh;
+    }
+    .thanks-wrap{
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 56px 20px;
+    }
+    .thanks-card{
+      border-radius: var(--r-lg);
+      border: 1px solid var(--stroke);
+      background: rgba(10,10,16,.62);
+      box-shadow: var(--shadow-card);
+      padding: 26px;
+      backdrop-filter: blur(10px);
+    }
+    .thanks-title{
+      margin:0 0 10px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+    .thanks-text{
+      margin:0;
+      color: rgba(230,229,234,.78);
+      line-height: 1.7;
+    }
+
+    /* Footer CTA */
+    .footer-cta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 920px){
+      .grid{ grid-template-columns: 1fr; }
+      .form{ grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .bg-svg * { animation: none !important; }
+      .reveal, .reveal.in{ transition:none !important; transform:none !important; opacity:1 !important; }
+      .btn{ transition:none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background fabric -->
+  <div class="bg-fabric" aria-hidden="true">
+    <svg class="bg-svg" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <defs>
+        <filter id="fabric">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="2" result="noise">
+            <animate attributeName="seed" dur="16s" values="1;2;3;2;1" repeatCount="indefinite"/>
+            <animate attributeName="baseFrequency" dur="18s" values="0.010;0.014;0.011;0.013;0.010" repeatCount="indefinite"/>
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+
+        <linearGradient id="purpleBlackGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="#000000"/>
+          <stop offset="35%" stop-color="#12061f"/>
+          <stop offset="65%" stop-color="#2B0A5E"/>
+          <stop offset="100%" stop-color="#000000"/>
+        </linearGradient>
+
+        <radialGradient id="highlight" cx="35%" cy="40%" r="70%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.10)"/>
+          <stop offset="60%" stop-color="rgba(255,255,255,0.02)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+        </radialGradient>
+      </defs>
+
+      <rect width="1200" height="800" fill="url(#purpleBlackGrad)" filter="url(#fabric)"/>
+      <rect width="1200" height="800" fill="url(#highlight)" opacity="0.9"/>
+    </svg>
+    <div class="bg-grain"></div>
+  </div>
+
+  <!-- Hidden iframe (POST em background) -->
+  <iframe name="hidden_iframe" style="display:none" aria-hidden="true"></iframe>
+
+  <!-- PAGE CONTENT -->
+  <div id="pageContent">
+    <div class="container">
+      <!-- HERO -->
+      <section id="hero" class="reveal">
+        <div class="pill">Playbook gratuito</div>
+
+        <!-- COPY (não alterar) -->
+        <h1 class="h1">Seu WhatsApp não precisa virar plantão.</h1>
+
+        <p class="lead">
+          Baixe o playbook gratuito feito pra nutricionistas solos que querem captar e organizar leads sem bagunçar a agenda — e com boas práticas pra reduzir o risco de bloqueios por mensagem fora de hora/sem permissão.
+        </p>
+
+        <a class="btn primary" href="#formulario" id="heroCta">Quero o playbook em PDF</a>
+
+        <div class="micro">Sem spam. Você pode sair com 1 clique.</div>
+        <!-- /COPY -->
+      </section>
+
+      <!-- PROBLEMA -->
+      <section id="problema" class="grid">
+        <div class="card reveal d2">
+          <div class="card-inner">
+            <div class="card-title">O PROBLEMA (conexão rápida)</div>
+
+            <!-- COPY (não alterar) -->
+            <p class="card-desc">Sabe o que mais cansa no WhatsApp?</p>
+            <p class="card-desc" style="margin-top:10px;">Não é responder.<br>É responder “o tempo todo”, sem saber se a pessoa vai marcar, sumir ou aparecer.</p>
+            <p class="card-desc" style="margin-top:14px;">E no meio disso:</p>
+            <ul class="list">
+              <li>lead bom esfria porque demorou 2 horas pra você ver</li>
+              <li>a agenda vira um “quebra-cabeça” de áudio + print + “pode ser terça?”</li>
+              <li>confirmação fica pra depois… e o no-show vira rotina</li>
+            </ul>
+            <!-- /COPY -->
+          </div>
+        </div>
+
+        <div class="card reveal d3">
+          <div class="card-inner">
+            <div class="card-title">O QUE VOCÊ VAI GANHAR COM O PLAYBOOK</div>
+
+            <!-- COPY (não alterar) -->
+            <p class="card-desc" style="font-weight:800; color:rgba(230,229,234,.92); margin-top:6px;">
+              O que tem dentro (pra você aplicar em 1 tarde)
+            </p>
+
+            <p class="card-desc" style="margin-top:14px; font-weight:700;">Bullets:</p>
+            <ul class="list">
+              <li>Um fluxo simples de pré-qualificação (presencial/online/híbrido, intenção e disponibilidade)</li>
+              <li>Como conduzir pro agendamento sem parecer robô</li>
+              <li>Modelo de confirmação 24h antes + lembrete perto do horário (sem ser chato)</li>
+              <li>Cadência curta de follow-up pra quem some (sem perseguição)</li>
+              <li>Um pipeline enxuto pra organizar tudo (Novo → Agendado → Confirmado → Compareceu → Faltou/Remarcou + retorno)</li>
+              <li>Boas práticas de opt-in e cadência pra manter o WhatsApp saudável e evitar dor de cabeça</li>
+            </ul>
+
+            <p class="card-desc" style="margin-top:14px; font-weight:800; color:rgba(230,229,234,.92);">
+              Obs. curta (importante):
+            </p>
+            <p class="card-desc">Nada de “hack”. É o básico bem-feito — do jeito que o WhatsApp espera que você use.</p>
+            <!-- /COPY -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PRA QUEM É -->
+      <section id="praquem" class="grid" style="margin-top:18px;">
+        <div class="card reveal">
+          <div class="card-inner">
+            <div class="card-title">PRA QUEM É / PRA QUEM NÃO É</div>
+
+            <!-- COPY (não alterar) -->
+            <p class="card-desc" style="font-weight:800; color:rgba(230,229,234,.92); margin-top:10px;">Pra quem é:</p>
+            <ul class="list">
+              <li>Nutri solo que faz atendimento e ainda “faz o comercial”</li>
+              <li>Quem quer organizar captação sem virar refém do celular</li>
+              <li>Quem quer uma rotina leve: responder, agendar e pronto</li>
+            </ul>
+
+            <p class="card-desc" style="font-weight:800; color:rgba(230,229,234,.92); margin-top:14px;">Não é pra quem:</p>
+            <ul class="list">
+              <li>Quer script agressivo / spam / atalho</li>
+              <li>Quer que o WhatsApp “venda sozinho” sem ter processo</li>
+            </ul>
+            <!-- /COPY -->
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="card-inner">
+            <div class="card-title">MINI-HISTÓRIA (prova leve)</div>
+
+            <!-- COPY (não alterar) -->
+            <p class="card-desc">A maioria das nutricionistas que chega aqui tem o mesmo cenário:<br>agenda ok… mas captação e remarcação viram um caos.</p>
+
+            <p class="card-desc" style="margin-top:12px;">Quando você coloca um fluxo claro (primeira mensagem → qualificação → agenda → confirmação → lembretes → follow-up), você para de “apagar incêndio” e começa a dirigir o atendimento.</p>
+
+            <p class="card-desc" style="margin-top:12px;">É isso que esse playbook te entrega: clareza e controle.</p>
+            <!-- /COPY -->
+          </div>
+        </div>
+      </section>
+
+      <!-- FORM -->
+      <section id="formulario" class="card reveal" style="margin-top:18px;">
+        <div class="card-inner">
+          <!-- COPY (não alterar) -->
+          <div class="card-title">FORMULÁRIO (captura)</div>
+          <p class="card-desc" style="font-weight:800; color:rgba(230,229,234,.92); margin-top:10px;">Título:<br>Me manda o playbook</p>
+
+          <p class="card-desc" style="margin-top:12px; font-weight:800; color:rgba(230,229,234,.92);">Campos sugeridos:</p>
+          <ul class="list">
+            <li>Nome</li>
+            <li>E-mail</li>
+            <li>WhatsApp (opcional)</li>
+          </ul>
+
+          <p class="card-desc" style="margin-top:12px; font-weight:800; color:rgba(230,229,234,.92);">Microcopy:</p>
+          <p class="card-desc">Se você deixar o WhatsApp, eu posso te mandar o link por lá somente com sua permissão. Se preferir, receba só por e-mail.</p>
+          <!-- /COPY -->
+
+          <form id="leadForm"
+                method="POST"
+                target="hidden_iframe"
+                action="https://projeto-01-n8n.n3mjwn.easypanel.host/webhook/landing_page_playbook_fvqie2497"
+                style="margin-top:14px;">
+            <div class="form">
+              <div class="field">
+                <label for="nome">Nome</label>
+                <input id="nome" name="nome" required autocomplete="name" />
+              </div>
+
+              <div class="field">
+                <label for="email">E-mail</label>
+                <input id="email" name="email" type="email" required autocomplete="email" />
+              </div>
+
+              <div class="field full">
+                <label for="whatsapp">WhatsApp</label>
+                <!-- WhatsApp obrigatório (mesmo que a copy diga “opcional”) -->
+                <input id="whatsapp" name="whatsapp" required autocomplete="tel" inputmode="tel" placeholder="(DDD) 9XXXX-XXXX" />
+              </div>
+
+              <div class="field full">
+                <div class="consent">
+                  <!-- consentimento obrigatório -->
+                  <input id="consent_whatsapp" name="consent_whatsapp" type="checkbox" value="true" required />
+                  <label for="consent_whatsapp" style="font-weight:600; cursor:pointer; margin:0;">
+                    Autorizo contato no WhatsApp
+                  </label>
+                </div>
+              </div>
+
+              <!-- Hidden tracking -->
+              <input type="hidden" name="utm_source" id="utm_source">
+              <input type="hidden" name="utm_medium" id="utm_medium">
+              <input type="hidden" name="utm_campaign" id="utm_campaign">
+              <input type="hidden" name="utm_content" id="utm_content">
+              <input type="hidden" name="utm_term" id="utm_term">
+              <input type="hidden" name="landing_url" id="landing_url">
+              <input type="hidden" name="timestamp" id="timestamp">
+            </div>
+
+            <!-- COPY (não alterar) -->
+            <button type="submit" class="btn primary" id="submitBtn" style="margin-top:14px;">Enviar e receber o PDF</button>
+            <!-- /COPY -->
+
+            <div class="status" id="status"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="card reveal" style="margin-top:18px;">
+        <div class="card-inner">
+          <!-- COPY (não alterar) -->
+          <div class="card-title">FAQ (curto)</div>
+
+          <p class="card-desc" style="margin-top:10px; font-weight:800; color:rgba(230,229,234,.92);">“Serve pra atendimento online e presencial?”</p>
+          <p class="card-desc">Sim. O fluxo adapta pro seu modelo (online, presencial ou híbrido).</p>
+
+          <p class="card-desc" style="margin-top:12px; font-weight:800; color:rgba(230,229,234,.92);">“Preciso de CRM?”</p>
+          <p class="card-desc">Não. O playbook usa um pipeline simples (planilha) que resolve 90% do jogo.</p>
+
+          <p class="card-desc" style="margin-top:12px; font-weight:800; color:rgba(230,229,234,.92);">“Isso é sobre conteúdo clínico?”</p>
+          <p class="card-desc">Não. É sobre processo de atendimento e agenda.</p>
+          <!-- /COPY -->
+        </div>
+      </section>
+
+      <!-- FECHAMENTO -->
+      <section id="fechamento" class="card reveal" style="margin-top:18px; margin-bottom: 10px;">
+        <div class="card-inner">
+          <!-- COPY (não alterar) -->
+          <div class="card-title">FECHAMENTO (última CTA)</div>
+
+          <p class="card-desc" style="font-weight:800; color:rgba(230,229,234,.92); margin-top:10px;">Título:<br>Quer que seu WhatsApp trabalhe a seu favor?</p>
+
+          <div class="footer-cta">
+            <a class="btn primary" href="#formulario">Quero o playbook em PDF</a>
+            <div class="micro">Microcopy: gratuito, direto ao ponto.</div>
+          </div>
+          <!-- /COPY -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+<!-- THANK YOU STATE (mesma página) -->
+<div id="thankYouState">
+  <div class="thanks-wrap">
+    <div class="thanks-card reveal in">
+      <h2 class="thanks-title">Pronto ✅</h2>
+      <p class="thanks-text">Enviei o playbook para seu e-mail. Se não aparecer em alguns minutos, confira o spam.</p>
+
+      <!-- Se quiser um texto menor/maior depois, você ajusta aqui -->
+      <div class="micro" style="margin-top:12px;">
+        Se não aparecer, confira a caixa de spam e promoções.
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script>
+    // ===== Reveal (load + scroll) =====
+    (function(){
+      const els = Array.from(document.querySelectorAll('.reveal'));
+      const prefersReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduce) {
+        els.forEach(el => el.classList.add('in'));
+        return;
+      }
+
+      const io = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{
+          if(e.isIntersecting){
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08 });
+
+      els.forEach(el => io.observe(el));
+      window.addEventListener('load', ()=> {
+        // garante hero in caso não intersecte de imediato
+        document.querySelectorAll('#hero.reveal').forEach(el=> el.classList.add('in'));
+      });
+    })();
+
+    // ===== UTM + hidden fields =====
+    (function(){
+      const qs = new URLSearchParams(location.search);
+      const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ""; };
+
+      set("utm_source", qs.get("utm_source"));
+      set("utm_medium", qs.get("utm_medium"));
+      set("utm_campaign", qs.get("utm_campaign"));
+      set("utm_content", qs.get("utm_content"));
+      set("utm_term", qs.get("utm_term"));
+      set("landing_url", location.href);
+      set("timestamp", new Date().toISOString());
+    })();
+
+    // ===== UX submit: iframe + “vira obrigado” =====
+    (function(){
+      const form = document.getElementById('leadForm');
+      const btn = document.getElementById('submitBtn');
+      const status = document.getElementById('status');
+      const pageContent = document.getElementById('pageContent');
+      const thankYouState = document.getElementById('thankYouState');
+      const backBtn = document.getElementById('backBtn');
+
+      const showThankYou = () => {
+        pageContent.style.display = 'none';
+        thankYouState.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      form.addEventListener('submit', () => {
+        btn.disabled = true;
+        status.textContent = 'Enviando…';
+
+        // Troca a UI sem esperar resposta do servidor (envio ocorre no iframe)
+        setTimeout(showThankYou, 400);
+      });
+
+      backBtn?.addEventListener('click', () => {
+        thankYouState.style.display = 'none';
+        pageContent.style.display = 'block';
+        btn.disabled = false;
+        status.textContent = '';
+        document.getElementById('formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      // CTA do hero rola para o formulário
+      document.getElementById('heroCta')?.addEventListener('click', (e)=>{
+        // âncora já rola, isso só ajuda em alguns browsers
+        setTimeout(()=> document.getElementById('formulario')?.scrollIntoView({ behavior:'smooth' }), 0);
+      });
+    })();
+  </script>
+</body>
+</html>

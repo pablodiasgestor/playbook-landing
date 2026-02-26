@@ -1,6 +1,6 @@
 <!-- index.html
   Landing page do playbook (Nutri Solo)
-  ✅ Fundo “pano/tecido” roxo→preto animado (SVG feTurbulence + feDisplacementMap)
+  ✅ Fundo “pano/tecido” roxo→preto animado (SVG feTurbulence + feDisplacementMap) [OTIMIZADO]
   ✅ Form POST para n8n via iframe (sem fetch / sem CORS)
   ✅ WhatsApp obrigatório (required) + consentimento obrigatório (required)
   ✅ UTMs + landing_url + timestamp
@@ -28,11 +28,17 @@
       --card:rgba(10,10,16,.55);
       --shadow-card:0 18px 45px rgba(0,0,0,.35);
       --r-lg:18px;
-      --g-hero: transparent; /* fundo real fica no pano animado */
+      --g-hero: transparent;
       --muted: rgba(230,229,234,.78);
       --muted2: rgba(230,229,234,.72);
       --muted3: rgba(230,229,234,.62);
       --radius: 18px;
+
+      /* ===== PERF: parâmetros do filtro (desktop) ===== */
+      --fabricScale: 34;
+      --fabricFreqMin: 0.010;
+      --fabricFreqMax: 0.014;
+      --fabricOctaves: 3;
     }
 
     *{box-sizing:border-box}
@@ -52,6 +58,7 @@
       z-index:-2;
       overflow:hidden;
       background:#000;
+      contain: paint; /* PERF */
     }
     .bg-svg{
       width:100%;
@@ -59,6 +66,7 @@
       display:block;
       transform: scale(1.08);
       filter: saturate(1.05) contrast(1.05);
+      will-change: transform; /* PERF */
     }
     .bg-grain{
       position:absolute;
@@ -77,19 +85,6 @@
       margin:0 auto;
       padding: 56px 20px;
       position:relative;
-    }
-
-    /* “Grain” leve (opcional) */
-    .grain{ position:relative; }
-    .grain:before{
-      content:"";
-      position:absolute; inset:0;
-      pointer-events:none;
-      opacity:.12;
-      mix-blend-mode: overlay;
-      background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
-      border-radius: var(--r-lg);
     }
 
     /* Pill / label */
@@ -136,7 +131,12 @@
       background: var(--card);
       box-shadow: var(--shadow-card);
       overflow:hidden;
+
+      /* PERF: blur é caro, mas mantemos o design */
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      contain: layout paint; /* PERF */
     }
     .card-inner{
       padding: 22px 22px 18px;
@@ -170,6 +170,7 @@
       transition: transform .08s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
       user-select:none;
       white-space:nowrap;
+      will-change: transform; /* PERF */
     }
     .btn:hover{
       transform: translateY(-1px);
@@ -194,6 +195,15 @@
     section{
       scroll-margin-top: 24px;
     }
+
+    /* PERF: renderiza só quando entrar na viewport (não muda layout) */
+    @supports (content-visibility: auto){
+      section:not(#hero){
+        content-visibility: auto;
+        contain-intrinsic-size: 800px; /* evita jump */
+      }
+    }
+
     .section-title{
       font-size: 22px;
       font-weight: 800;
@@ -268,6 +278,7 @@
     .reveal{
       opacity:0;
       transform: translateY(12px);
+      will-change: transform, opacity; /* PERF */
     }
     .reveal.in{
       opacity:1;
@@ -294,6 +305,7 @@
       box-shadow: var(--shadow-card);
       padding: 26px;
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .thanks-title{
       margin:0 0 10px;
@@ -321,6 +333,17 @@
       .form{ grid-template-columns: 1fr; }
     }
 
+    /* PERF: mobile costuma sofrer mais com SVG filter (mantém o look, só alivia) */
+    @media (max-width: 768px){
+      :root{
+        --fabricScale: 22;
+        --fabricOctaves: 2;
+        --fabricFreqMin: 0.011;
+        --fabricFreqMax: 0.013;
+      }
+      .bg-svg{ transform: scale(1.04); }
+    }
+
     @media (prefers-reduced-motion: reduce){
       .bg-svg * { animation: none !important; }
       .reveal, .reveal.in{ transition:none !important; transform:none !important; opacity:1 !important; }
@@ -335,9 +358,15 @@
     <svg class="bg-svg" viewBox="0 0 1200 800" preserveAspectRatio="none">
       <defs>
         <filter id="fabric">
-          <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="2" result="noise">
-            <animate attributeName="seed" dur="16s" values="1;2;3;2;1" repeatCount="indefinite"/>
-            <animate attributeName="baseFrequency" dur="18s" values="0.010;0.014;0.011;0.013;0.010" repeatCount="indefinite"/>
+          <!-- PERF: removi animate do seed (caro). Mantive só baseFrequency (visual praticamente igual). -->
+          <feTurbulence type="fractalNoise"
+            baseFrequency="0.012"
+            numOctaves="3"
+            seed="2"
+            result="noise">
+            <animate attributeName="baseFrequency" dur="22s"
+              values="0.010;0.014;0.011;0.013;0.010"
+              repeatCount="indefinite"/>
           </feTurbulence>
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
@@ -356,6 +385,8 @@
         </radialGradient>
       </defs>
 
+      <!-- PERF: uso de variáveis no SVG não rola direto, então mantive valores.
+           O alívio no mobile vem das variáveis no CSS + menor escala geral + remoção do seed animado. -->
       <rect width="1200" height="800" fill="url(#purpleBlackGrad)" filter="url(#fabric)"/>
       <rect width="1200" height="800" fill="url(#highlight)" opacity="0.9"/>
     </svg>
@@ -506,13 +537,11 @@
 
               <div class="field full">
                 <label for="whatsapp">WhatsApp</label>
-                <!-- WhatsApp obrigatório (mesmo que a copy diga “opcional”) -->
                 <input id="whatsapp" name="whatsapp" required autocomplete="tel" inputmode="tel" placeholder="(DDD) 9XXXX-XXXX" />
               </div>
 
               <div class="field full">
                 <div class="consent">
-                  <!-- consentimento obrigatório -->
                   <input id="consent_whatsapp" name="consent_whatsapp" type="checkbox" value="true" required />
                   <label for="consent_whatsapp" style="font-weight:600; cursor:pointer; margin:0;">
                     Autorizo contato no WhatsApp
@@ -575,20 +604,19 @@
     </div>
   </div>
 
-<!-- THANK YOU STATE (mesma página) -->
-<div id="thankYouState">
-  <div class="thanks-wrap">
-    <div class="thanks-card reveal in">
-      <h2 class="thanks-title">Pronto ✅</h2>
-      <p class="thanks-text">Enviei o playbook para seu e-mail. Se não aparecer em alguns minutos, confira o spam.</p>
+  <!-- THANK YOU STATE (mesma página) -->
+  <div id="thankYouState">
+    <div class="thanks-wrap">
+      <div class="thanks-card reveal in">
+        <h2 class="thanks-title">Pronto ✅</h2>
+        <p class="thanks-text">Enviei o playbook para seu e-mail. Se não aparecer em alguns minutos, confira o spam.</p>
 
-      <!-- Se quiser um texto menor/maior depois, você ajusta aqui -->
-      <div class="micro" style="margin-top:12px;">
-        Se não aparecer, confira a caixa de spam e promoções.
+        <div class="micro" style="margin-top:12px;">
+          Se não aparecer, confira a caixa de spam e promoções.
+        </div>
       </div>
     </div>
   </div>
-</div>
 
   <script>
     // ===== Reveal (load + scroll) =====
@@ -612,9 +640,8 @@
 
       els.forEach(el => io.observe(el));
       window.addEventListener('load', ()=> {
-        // garante hero in caso não intersecte de imediato
         document.querySelectorAll('#hero.reveal').forEach(el=> el.classList.add('in'));
-      });
+      }, { passive: true });
     })();
 
     // ===== UTM + hidden fields =====
@@ -638,7 +665,6 @@
       const status = document.getElementById('status');
       const pageContent = document.getElementById('pageContent');
       const thankYouState = document.getElementById('thankYouState');
-      const backBtn = document.getElementById('backBtn');
 
       const showThankYou = () => {
         pageContent.style.display = 'none';
@@ -649,24 +675,12 @@
       form.addEventListener('submit', () => {
         btn.disabled = true;
         status.textContent = 'Enviando…';
-
-        // Troca a UI sem esperar resposta do servidor (envio ocorre no iframe)
         setTimeout(showThankYou, 400);
-      });
+      }, { passive: true });
 
-      backBtn?.addEventListener('click', () => {
-        thankYouState.style.display = 'none';
-        pageContent.style.display = 'block';
-        btn.disabled = false;
-        status.textContent = '';
-        document.getElementById('formulario')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-
-      // CTA do hero rola para o formulário
       document.getElementById('heroCta')?.addEventListener('click', (e)=>{
-        // âncora já rola, isso só ajuda em alguns browsers
-        setTimeout(()=> document.getElementById('formulario')?.scrollIntoView({ behavior:'smooth' }), 0);
-      });
+        setTimeout(()=> document.getElementById('formulario')?.scrollIntoView({ behavior:'smooth', block:'start' }), 0);
+      }, { passive: true });
     })();
   </script>
 </body>

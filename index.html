@@ -333,7 +333,7 @@
       .form{ grid-template-columns: 1fr; }
     }
 
-    /* PERF: mobile costuma sofrer mais com SVG filter (mantém o look, só alivia) */
+    /* PERF: mobile costuma sofrer mais com SVG filter + blur */
     @media (max-width: 768px){
       :root{
         --fabricScale: 22;
@@ -342,6 +342,15 @@
         --fabricFreqMax: 0.013;
       }
       .bg-svg{ transform: scale(1.04); }
+
+      /* (1) DESLIGA o filtro do pano no mobile (mantém gradiente + grain) */
+      .bg-svg rect[filter]{ filter: none !important; }
+
+      /* (2) REDUZ blur do glass no mobile (mesmo visual, menos custo) */
+      .card, .thanks-card{
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
     }
 
     @media (prefers-reduced-motion: reduce){
@@ -385,8 +394,6 @@
         </radialGradient>
       </defs>
 
-      <!-- PERF: uso de variáveis no SVG não rola direto, então mantive valores.
-           O alívio no mobile vem das variáveis no CSS + menor escala geral + remoção do seed animado. -->
       <rect width="1200" height="800" fill="url(#purpleBlackGrad)" filter="url(#fabric)"/>
       <rect width="1200" height="800" fill="url(#highlight)" opacity="0.9"/>
     </svg>
